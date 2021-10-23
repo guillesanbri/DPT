@@ -322,9 +322,9 @@ class BackboneWrapper(nn.Module):
             layer_2 = self.act_postprocess2(layer_2.unflatten(2, out_size))
 
         x3, y3, z3 = layer_3.shape
-        layer_3 = self.act_postprocess3(layer_3.view(x3, y3, *out_size))
+        layer_3 = self.act_postprocess3(layer_3.view(x3, y3, out_size[0], out_size[1]))
         x4, y4, z4 = layer_4.shape
-        layer_4 = self.act_postprocess4(layer_4.view(x4, y4, *out_size))
+        layer_4 = self.act_postprocess4(layer_4.view(x4, y4, out_size[0], out_size[1]))
 
         return layer_1, layer_2, layer_3, layer_4
 

@@ -133,7 +133,7 @@ def export(model_path, output_path, model_type="dpt_hybrid"):
     onnx.checker.check_model(onnx_model)
     ort_session = onnxruntime.InferenceSession("dpt.onnx")
 
-    x_test = torch.randn(10, 3, 384, 384, device='cpu')
+    x_test = torch.randn(2, 3, 384, 384, device='cpu')
     y_test = model(x_test)
 
     # compute ONNX Runtime output prediction

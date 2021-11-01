@@ -137,7 +137,7 @@ def _make_pretrained_resnext101_wsl(use_pretrained):
 class Interpolate(nn.Module):
     """Interpolation module."""
 
-    def __init__(self, scale_factor, mode, align_corners=False):
+    def __init__(self, scale_factor, mode, align_corners=True):
         """Init.
 
         Args:

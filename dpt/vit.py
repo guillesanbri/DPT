@@ -38,7 +38,7 @@ def get_mean_attention_map(attn, token, shape):
     attn = attn[:, :, token, 1:]
     attn = attn.unflatten(2, torch.Size([shape[2] // 16, shape[3] // 16])).float()
     attn = torch.nn.functional.interpolate(
-        attn, size=shape[2:], mode="bicubic", align_corners=False
+        attn, size=shape[2:], mode="bicubic", align_corners=True
     ).squeeze(0)
 
     all_attn = torch.mean(attn, 0)
@@ -245,7 +245,7 @@ class BackboneWrapper(nn.Module):
 
         posemb_grid = posemb_grid.reshape(1, gs_old, gs_old, -1).permute(0, 3, 1, 2)
         posemb_grid = F.interpolate(
-            posemb_grid, size=[gs_h, gs_w], mode="bilinear", align_corners=False
+            posemb_grid, size=[gs_h, gs_w], mode="bilinear", align_corners=True
         )
         posemb_grid = posemb_grid.permute(0, 2, 3, 1).reshape(1, gs_h * gs_w, -1)
 

@@ -156,7 +156,7 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
                     prediction.unsqueeze(1),
                     size=img.shape[:2],
                     mode="bicubic",
-                    align_corners=False,
+                    align_corners=True,
                 )
                 .squeeze()
                 .cpu()

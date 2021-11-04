@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import random
+import string
 
 from dpt.vit import get_mean_attention_map
 
@@ -69,3 +71,10 @@ def visualize_attention(input, model, prediction, model_type):
     ), plt.axis("off")
     plt.tight_layout()
     plt.show()
+
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    print("Random string of length", length, "is:", result_str)

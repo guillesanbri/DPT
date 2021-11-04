@@ -182,13 +182,13 @@ class Resize(object):
                 sample["depth"] = cv2.resize(
                     sample["depth"], (width, height), interpolation=cv2.INTER_NEAREST
                 )
-
-            sample["mask"] = cv2.resize(
-                sample["mask"].astype(np.float32),
-                (width, height),
-                interpolation=cv2.INTER_NEAREST,
-            )
-            sample["mask"] = sample["mask"].astype(bool)
+            if "mask" in sample:
+                sample["mask"] = cv2.resize(
+                    sample["mask"].astype(np.float32),
+                    (width, height),
+                    interpolation=cv2.INTER_NEAREST,
+                )
+                sample["mask"] = sample["mask"].astype(bool)
 
         return sample
 

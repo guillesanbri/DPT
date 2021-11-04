@@ -114,4 +114,5 @@ wandb/
 *.jpg
 *.jpeg
 *.pt
+*.onnx
 .DS_Store

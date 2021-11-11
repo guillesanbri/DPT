@@ -18,12 +18,13 @@ from dpt.transforms import Resize, NormalizeImage, PrepareForNet
 # TODO: Add horizontal flip augmentation
 net_w = 640
 net_h = 192
-batch_size = 1
+batch_size = 2
 epochs = 10
 learning_rate = 1e-4
 train_images_file = "train_files_eigen_full_fix.txt"
 val_images_file = "val_files_eigen_full_fix.txt"
-output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8) + ".pt"
+output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
+output_filename = output_name + ".pt"
 
 config_dict = {
     "learning_rate": learning_rate,
@@ -34,7 +35,7 @@ config_dict = {
     "downsampling": "Resize image along w and h",  # TODO: Test resize min axis to 384 and random crop.
     "train_images_file": train_images_file,
     "val_images_file": val_images_file,
-    "weights_file_name": output_name
+    "weights_file_name": output_filename
 }
 
 
@@ -212,9 +213,10 @@ if __name__ == "__main__":
         print(f"Epoch {t+1}\n-------------------------------")
         training_step = train(train_dataloader, model, loss_fn, optimizer, training_step)
         test(test_dataloader, model, loss_fn, training_step)
-        torch.save(model.state_dict(), "weights/" + output_name)
-        print(f"Saved PyTorch Model checkpoint to weights/{output_name}")
+        checkpoint_filename = "weights/" + output_name + "_" + str(t+1).zfill(3) + ".pt"
+        torch.save(model.state_dict(), checkpoint_filename)
+        print(f"Saved PyTorch Model checkpoint to weights/{checkpoint_filename}")
     print("Done!")
 
-    torch.save(model.state_dict(), "weights/" + output_name)
-    print(f"Saved PyTorch Model State to weights/{output_name}")
+    torch.save(model.state_dict(), "weights/" + output_filename)
+    print(f"Saved PyTorch Model State to weights/{output_filename}")

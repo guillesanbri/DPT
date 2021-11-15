@@ -20,6 +20,7 @@ def _make_encoder(
     hooks=None,
     use_readout="ignore",
     enable_attention_hooks=False,
+    attention_variant=None,
 ):
     if backbone == "vitl16_384":
         pretrained = _make_pretrained_vitl16_384(
@@ -37,6 +38,7 @@ def _make_encoder(
             hooks=hooks,
             use_readout=use_readout,
             enable_attention_hooks=enable_attention_hooks,
+            attention_variant=attention_variant,
         )
         scratch = _make_scratch(
             [256, 512, 768, 768], features, groups=groups, expand=expand

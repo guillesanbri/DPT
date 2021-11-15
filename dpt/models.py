@@ -33,6 +33,7 @@ class DPT(BaseModel):
         channels_last=False,
         use_bn=False,
         enable_attention_hooks=False,
+        attention_variant=None,
     ):
 
         super(DPT, self).__init__()
@@ -56,6 +57,7 @@ class DPT(BaseModel):
             hooks=hooks[backbone],
             use_readout=readout,
             enable_attention_hooks=enable_attention_hooks,
+            attention_variant=attention_variant,
         )
 
         self.scratch.refinenet1 = _make_fusion_block(features, use_bn)

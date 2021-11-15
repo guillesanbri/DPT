@@ -18,15 +18,20 @@ from dpt.transforms import Resize, NormalizeImage, PrepareForNet
 # TODO: Add horizontal flip augmentation
 net_w = 640
 net_h = 192
-batch_size = 2
-epochs = 10
-learning_rate = 1e-4
+batch_size = 1
+epochs = 20
+learning_rate = 1e-5
+# memory_compressed only supports batch_size=1
+attention_variant = "memory_compressed"
 train_images_file = "train_files_eigen_full_fix.txt"
 val_images_file = "val_files_eigen_full_fix.txt"
 output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
 output_filename = output_name + ".pt"
 
 config_dict = {
+    "attention_variant": attention_variant,
+    "memory_compressed_rate": 2,
+    "memory_compressed_dropout": 0,
     "learning_rate": learning_rate,
     "epochs": epochs,
     "batch_size": batch_size,
@@ -167,7 +172,8 @@ if __name__ == "__main__":
                 invert=True,
                 backbone="vitb_rn50_384",
                 non_negative=True,
-                enable_attention_hooks=False).to(device)
+                enable_attention_hooks=False,
+                attention_variant=attention_variant).to(device)
 
     # Transformations
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
@@ -215,7 +221,7 @@ if __name__ == "__main__":
         test(test_dataloader, model, loss_fn, training_step)
         checkpoint_filename = "weights/" + output_name + "_" + str(t+1).zfill(3) + ".pt"
         torch.save(model.state_dict(), checkpoint_filename)
-        print(f"Saved PyTorch Model checkpoint to weights/{checkpoint_filename}")
+        print(f"Saved PyTorch Model checkpoint to {checkpoint_filename}")
     print("Done!")
 
     torch.save(model.state_dict(), "weights/" + output_filename)

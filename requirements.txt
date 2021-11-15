@@ -2,3 +2,8 @@ torch==1.9.0
 torchvision==0.10.0
 opencv-python==4.5.2.54
 timm==0.4.9
+wandb
+performer_pytorch
+reformer_pytorch
+memory_compressed_attention
+halonet_pytorch

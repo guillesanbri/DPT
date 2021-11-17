@@ -13,6 +13,9 @@ from torchvision.transforms import Compose
 from dpt.models import DPTDepthModel
 from dpt.transforms import Resize, NormalizeImage, PrepareForNet
 
+from torch.cuda.amp import GradScaler
+from torch.cuda.amp import autocast
+
 # Hyperparameters and config
 # net_w, net_h = 1216, 352  # TODO: Try full size and/or bigger bs with more VRAM
 # TODO: Add horizontal flip augmentation
@@ -31,7 +34,9 @@ output_filename = output_name + ".pt"
 config_dict = {
     "attention_variant": attention_variant,
     "memory_compressed_rate": 2,
+    "memory_compressed_heads": 4,
     "memory_compressed_dropout": 0,
+    "mixed_precision": True,
     "learning_rate": learning_rate,
     "epochs": epochs,
     "batch_size": batch_size,
@@ -44,7 +49,7 @@ config_dict = {
 }
 
 
-def train(dataloader, model, loss_fn, optimizer, training_step):
+def train(dataloader, model, loss_fn, optimizer, training_step, scaler):
     size = len(dataloader.dataset)
     model.train()
     for batch, (X, y) in enumerate(dataloader):
@@ -52,14 +57,16 @@ def train(dataloader, model, loss_fn, optimizer, training_step):
         X, y = X.to(device), y.to(device)
 
         # Compute prediction error
-        pred = model(X)
-        masked_pred, masked_y = mask_predictions(pred, y)
-        loss = loss_fn(masked_pred, masked_y)
+        with autocast():
+            pred = model(X)
+            masked_pred, masked_y = mask_predictions(pred, y)
+            loss = loss_fn(masked_pred, masked_y)
 
         # Backpropagation
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         if batch % 50 == 0:
             loss, current = loss.item(), batch * len(X)
@@ -212,12 +219,13 @@ if __name__ == "__main__":
 
     loss_fn = custom_loss
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    scaler = GradScaler()
     training_step = 0
     # Train loop
     test(test_dataloader, model, loss_fn, training_step)
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        training_step = train(train_dataloader, model, loss_fn, optimizer, training_step)
+        training_step = train(train_dataloader, model, loss_fn, optimizer, training_step, scaler)
         test(test_dataloader, model, loss_fn, training_step)
         checkpoint_filename = "weights/" + output_name + "_" + str(t+1).zfill(3) + ".pt"
         torch.save(model.state_dict(), checkpoint_filename)

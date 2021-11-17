@@ -27,7 +27,7 @@ def reformer_attention_wrapper():
 def memory_compressed_attention_wrapper():
     return memory_compressed_attention.MemoryCompressedAttention(
         dim=768,
-        heads=8,
+        heads=4,
         causal=False,
         compression_factor=2,
     )

@@ -22,6 +22,7 @@ from torch.cuda.amp import autocast
 net_w = 640
 net_h = 192
 batch_size = 1
+accumulation_steps = 8
 epochs = 20
 learning_rate = 1e-5
 # memory_compressed only supports batch_size=1
@@ -30,6 +31,7 @@ train_images_file = "train_files_eigen_full_fix.txt"
 val_images_file = "val_files_eigen_full_fix.txt"
 output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
 output_filename = output_name + ".pt"
+opt = torch.optim.AdamW
 
 config_dict = {
     "attention_variant": attention_variant,
@@ -40,6 +42,8 @@ config_dict = {
     "learning_rate": learning_rate,
     "epochs": epochs,
     "batch_size": batch_size,
+    "accumulation_steps": accumulation_steps,
+    "optimizer": opt,
     "input_height": net_h,
     "input_width": net_w,
     "downsampling": "Resize image along w and h",  # TODO: Test resize min axis to 384 and random crop.
@@ -52,6 +56,7 @@ config_dict = {
 def train(dataloader, model, loss_fn, optimizer, training_step, scaler):
     size = len(dataloader.dataset)
     model.train()
+    model.zero_grad()
     for batch, (X, y) in enumerate(dataloader):
         training_step += 1
         X, y = X.to(device), y.to(device)
@@ -61,22 +66,24 @@ def train(dataloader, model, loss_fn, optimizer, training_step, scaler):
             pred = model(X)
             masked_pred, masked_y = mask_predictions(pred, y)
             loss = loss_fn(masked_pred, masked_y)
+            loss = loss / accumulation_steps
 
         # Backpropagation
-        optimizer.zero_grad()
         scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        if (batch+1) % accumulation_steps == 0:
+            scaler.step(optimizer)
+            scaler.update()
+            model.zero_grad()
 
-        if batch % 50 == 0:
-            loss, current = loss.item(), batch * len(X)
+        if batch % 500 == 0:
+            loss, current = loss.item() * accumulation_steps, batch * len(X)
             metric_names = ["train_silog", "train_log10", "train_abs_rel", "train_sq_rel",
                             "train_rmse", "train_rmse_log", "train_d1", "train_d2", "train_d3"]
             metrics = np.array(compute_errors(masked_y.cpu().detach().numpy(), masked_pred.cpu().detach().numpy()))
             wandb.log({"training_step": training_step, "train_loss": loss, **dict(zip(metric_names, metrics))})
             print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
         # if batch % 1000 == 0 and batch != 0:
-        #     return training_step  # premature exit
+        #      return training_step  # premature exit
     return training_step
 
 
@@ -209,7 +216,7 @@ if __name__ == "__main__":
     train_dataset = KITTIDataset(image_dir, depth_dir, train_images_file_path, transform=transform)
     val_dataset = KITTIDataset(image_dir, depth_dir, val_filenames_file, transform=transform)
     # Create data loaders.
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     test_dataloader = DataLoader(val_dataset, batch_size=batch_size)
     # Print shape info
     for X, y in test_dataloader:
@@ -218,14 +225,20 @@ if __name__ == "__main__":
         break
 
     loss_fn = custom_loss
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = opt(model.parameters(), lr=learning_rate)
     scaler = GradScaler()
     training_step = 0
     # Train loop
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.enabled = True
     test(test_dataloader, model, loss_fn, training_step)
+    # import time
+    # t0 = time.time()
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         training_step = train(train_dataloader, model, loss_fn, optimizer, training_step, scaler)
+        # print(f"1000 batches ejecutados en: {time.time()-t0}")
+        # exit()
         test(test_dataloader, model, loss_fn, training_step)
         checkpoint_filename = "weights/" + output_name + "_" + str(t+1).zfill(3) + ".pt"
         torch.save(model.state_dict(), checkpoint_filename)

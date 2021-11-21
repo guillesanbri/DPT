@@ -34,27 +34,33 @@ class DPT(BaseModel):
         use_bn=False,
         enable_attention_hooks=False,
         attention_variant=None,
+        attention_heads=8,
+        hooks=None
     ):
 
         super(DPT, self).__init__()
 
         self.channels_last = channels_last
 
-        hooks = {
+        default_hooks = {
             "vitb_rn50_384": [0, 1, 8, 11],
             "vitb16_384": [2, 5, 8, 11],
             "vitl16_384": [5, 11, 17, 23],
         }
+
+        if hooks is None:
+            hooks = default_hooks[backbone]
 
         # Instantiate backbone and reassemble blocks
         self.pretrained, self.scratch = _make_encoder(
             backbone,
             features,
             False,  # Set to true of you want to train from scratch, uses ImageNet weights
+            attention_heads=attention_heads,
             groups=1,
             expand=False,
             exportable=False,
-            hooks=hooks[backbone],
+            hooks=hooks,
             use_readout=readout,
             enable_attention_hooks=enable_attention_hooks,
             attention_variant=attention_variant,

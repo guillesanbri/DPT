@@ -16,38 +16,38 @@ import math
 attention = {}
 
 
-def performer_attention_wrapper():
-    return performer_pytorch.SelfAttention(dim=768, heads=8, causal=False)
+def performer_attention_wrapper(att_heads):
+    return performer_pytorch.SelfAttention(dim=768, heads=att_heads, causal=False)
 
 
-def reformer_attention_wrapper():
-    return reformer_pytorch.LSHSelfAttention(dim=768, heads=8, bucket_size=384, n_hashes=16, causal=False)
+def reformer_attention_wrapper(att_heads):
+    return reformer_pytorch.LSHSelfAttention(dim=768, heads=att_heads, bucket_size=384, n_hashes=16, causal=False)
 
 
-def memory_compressed_attention_wrapper():
+def memory_compressed_attention_wrapper(att_heads):
     return memory_compressed_attention.MemoryCompressedAttention(
         dim=768,
-        heads=4,
+        heads=att_heads,
         causal=False,
         compression_factor=2,
     )
 
 
-def halo_attention_wrapper():
+def halo_attention_wrapper(att_heads):
     return halonet_pytorch.HaloAttention(
         dim=768,
         block_size=8,
         halo_size=4,
         dim_head=96,
-        heads=8,
+        heads=att_heads,
     )
 
 
 efficient_attentions = {
-    "performer": performer_attention_wrapper(),
-    "reformer": reformer_attention_wrapper(),
-    "memory_compressed": memory_compressed_attention_wrapper(),
-    "halo": halo_attention_wrapper(),
+    "performer": performer_attention_wrapper,
+    "reformer": reformer_attention_wrapper,
+    "memory_compressed": memory_compressed_attention_wrapper,
+    "halo": halo_attention_wrapper,
 }
 
 
@@ -371,6 +371,7 @@ class BackboneWrapper(nn.Module):
 
 def _make_pretrained_vitb_rn50_384(
     pretrained,
+    attention_heads,
     use_readout="ignore",
     hooks=None,
     enable_attention_hooks=False,
@@ -382,7 +383,7 @@ def _make_pretrained_vitb_rn50_384(
     if attention_variant:
         assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
         for i in range(len(model.blocks)):
-            model.blocks[i].attn = efficient_attentions[attention_variant]
+            model.blocks[i].attn = efficient_attentions[attention_variant](attention_heads)
 
     hooks = [0, 1, 8, 11] if hooks == None else hooks
     return BackboneWrapper(

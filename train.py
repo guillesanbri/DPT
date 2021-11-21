@@ -26,7 +26,9 @@ accumulation_steps = 8
 epochs = 20
 learning_rate = 1e-5
 # memory_compressed only supports batch_size=1
-attention_variant = "memory_compressed"
+attention_variant = "performer"
+attention_heads = 8
+hooks = [0, 1, 8, 11]
 train_images_file = "train_files_eigen_full_fix.txt"
 val_images_file = "val_files_eigen_full_fix.txt"
 output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
@@ -36,8 +38,8 @@ opt = torch.optim.AdamW
 config_dict = {
     "attention_variant": attention_variant,
     "memory_compressed_rate": 2,
-    "memory_compressed_heads": 4,
-    "memory_compressed_dropout": 0,
+    "attention_heads": attention_heads,
+    "hooks": hooks,
     "mixed_precision": True,
     "learning_rate": learning_rate,
     "epochs": epochs,
@@ -185,6 +187,8 @@ if __name__ == "__main__":
                 shift=0.00579,
                 invert=True,
                 backbone="vitb_rn50_384",
+                attention_heads=attention_heads,
+                hooks=hooks,
                 non_negative=True,
                 enable_attention_hooks=False,
                 attention_variant=attention_variant).to(device)

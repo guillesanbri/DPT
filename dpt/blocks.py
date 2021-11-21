@@ -14,6 +14,7 @@ def _make_encoder(
     backbone,
     features,
     use_pretrained,
+    attention_heads,
     groups=1,
     expand=False,
     exportable=True,
@@ -35,6 +36,7 @@ def _make_encoder(
     elif backbone == "vitb_rn50_384":
         pretrained = _make_pretrained_vitb_rn50_384(
             use_pretrained,
+            attention_heads,
             hooks=hooks,
             use_readout=use_readout,
             enable_attention_hooks=enable_attention_hooks,

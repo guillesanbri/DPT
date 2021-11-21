@@ -1,5 +1,6 @@
 import os
 import cv2
+import time
 import tqdm
 import wandb
 import torch
@@ -174,7 +175,7 @@ def custom_loss(masked_output, masked_target):
 
 if __name__ == "__main__":
     # Init wandb
-    wandb.init(project="test", config=config_dict)
+    wandb.init(project="performer_sweep", config=config_dict)
 
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -235,9 +236,9 @@ if __name__ == "__main__":
     # Train loop
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
+    t0 = time.time()
     test(test_dataloader, model, loss_fn, training_step)
-    # import time
-    # t0 = time.time()
+    wandb.log({"validation_inference_time": time.time()-t0})
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         training_step = train(train_dataloader, model, loss_fn, optimizer, training_step, scaler)

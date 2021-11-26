@@ -152,6 +152,7 @@ class BackboneWrapper(nn.Module):
         use_readout="ignore",
         start_index=1,
         enable_attention_hooks=False,
+        remove_unused_attention=True,
     ):
         super().__init__()
 
@@ -159,11 +160,19 @@ class BackboneWrapper(nn.Module):
         self.hooks = hooks
         self.hybrid_backbone = hybrid_backbone
 
+        self.remove_unused_attention = remove_unused_attention
+        if self.remove_unused_attention:
+            for i in range(self.hooks[-1]+1, 12):
+                self.model.blocks[i] = nn.Identity()
+            self.norm = nn.Identity()
+            self.pre_logits = nn.Identity()
+            self.head = nn.Identity()
+
         # We use hooks to get features frome the hybrid backbone.
         # Transformer features are directly acquired in self.forward_features
         if hybrid_backbone:
-            add_feature_hook(self.model.patch_embed.backbone.stages[0])
-            add_feature_hook(self.model.patch_embed.backbone.stages[1])
+            add_feature_hook(self.model.patch_embed.backbone.stages[hooks[0]])
+            add_feature_hook(self.model.patch_embed.backbone.stages[hooks[1]])
             self.hooks = self.hooks[2:]
 
             self.readout_oper1 = nn.Identity()
@@ -331,7 +340,8 @@ class BackboneWrapper(nn.Module):
             x = blk(x)
             if num in self.hooks:
                 out_features.append(x)
-
+            if self.remove_unused_attention and num > self.hooks[-1]:
+                break
         return out_features
 
     def forward(self, x):
@@ -376,6 +386,7 @@ def _make_pretrained_vitb_rn50_384(
     hooks=None,
     enable_attention_hooks=False,
     attention_variant=None,
+    remove_unused_attention=True,
 ):
     model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
 
@@ -393,6 +404,7 @@ def _make_pretrained_vitb_rn50_384(
         hybrid_backbone=True,
         use_readout=use_readout,
         enable_attention_hooks=enable_attention_hooks,
+        remove_unused_attention=remove_unused_attention,
     )
 
 

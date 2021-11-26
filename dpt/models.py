@@ -35,7 +35,8 @@ class DPT(BaseModel):
         enable_attention_hooks=False,
         attention_variant=None,
         attention_heads=8,
-        hooks=None
+        hooks=None,
+        remove_unused_attention=True,
     ):
 
         super(DPT, self).__init__()
@@ -64,6 +65,7 @@ class DPT(BaseModel):
             use_readout=readout,
             enable_attention_hooks=enable_attention_hooks,
             attention_variant=attention_variant,
+            remove_unused_attention=remove_unused_attention,
         )
 
         self.scratch.refinenet1 = _make_fusion_block(features, use_bn)

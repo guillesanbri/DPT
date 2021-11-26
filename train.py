@@ -24,7 +24,7 @@ net_w = 640
 net_h = 192
 batch_size = 1
 accumulation_steps = 8
-epochs = 20
+epochs = 1
 learning_rate = 1e-5
 # memory_compressed only supports batch_size=1
 attention_variant = "performer"
@@ -90,7 +90,7 @@ def train(dataloader, model, loss_fn, optimizer, training_step, scaler):
     return training_step
 
 
-def test(dataloader, model, loss_fn, training_step):
+def test(dataloader, model, loss_fn, training_step, log_wandb=True):
     num_batches = len(dataloader)
     model.eval()
     loss = 0
@@ -106,7 +106,8 @@ def test(dataloader, model, loss_fn, training_step):
             metrics += np.array(compute_errors(masked_y.cpu().numpy(), masked_pred.cpu().numpy()))
     loss /= num_batches
     metrics /= num_batches
-    wandb.log({"training_step": training_step, "val_loss": loss, **dict(zip(metric_names, metrics))})
+    if log_wandb:
+        wandb.log({"training_step": training_step, "val_loss": loss, **dict(zip(metric_names, metrics))})
     metrics_string = " | ".join([f"{metric_name}: {metric:.3f}" for metric_name, metric in zip(metric_names, metrics)])
     print(f"Validation metrics (Avg): loss: {loss:.6f} | " + metrics_string + "\n")
 
@@ -176,6 +177,11 @@ def custom_loss(masked_output, masked_target):
 if __name__ == "__main__":
     # Init wandb
     wandb.init(project="performer_sweep", config=config_dict)
+    config = wandb.config
+    accumulation_steps = config["accumulation_steps"]
+    learning_rate = config["learning_rate"]
+    attention_heads = config["attention_heads"]
+    hooks = config["hooks"]
 
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -237,7 +243,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
     t0 = time.time()
-    test(test_dataloader, model, loss_fn, training_step)
+    test(test_dataloader, model, loss_fn, training_step, log_wandb=False)
     wandb.log({"validation_inference_time": time.time()-t0})
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")

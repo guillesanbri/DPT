@@ -23,8 +23,8 @@ from torch.cuda.amp import autocast
 net_w = 640
 net_h = 192
 batch_size = 1
-accumulation_steps = 8
-epochs = 1
+accumulation_steps = 1
+epochs = 2
 learning_rate = 1e-5
 # memory_compressed only supports batch_size=1
 attention_variant = "performer"
@@ -176,12 +176,15 @@ def custom_loss(masked_output, masked_target):
 
 if __name__ == "__main__":
     # Init wandb
-    wandb.init(project="performer_sweep", config=config_dict)
+    wandb.init(project="hooks_sweep", config=config_dict)
     config = wandb.config
     accumulation_steps = config["accumulation_steps"]
     learning_rate = config["learning_rate"]
     attention_heads = config["attention_heads"]
     hooks = config["hooks"]
+
+    if isinstance(hooks, str):
+        hooks = [int(hook) for hook in hooks[4:].split(",")]
 
     # Get cpu or gpu device for training.
     device = "cuda" if torch.cuda.is_available() else "cpu"

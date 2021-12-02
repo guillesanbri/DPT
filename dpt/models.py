@@ -47,10 +47,14 @@ class DPT(BaseModel):
             "vitb_rn50_384": [0, 1, 8, 11],
             "vitb16_384": [2, 5, 8, 11],
             "vitl16_384": [5, 11, 17, 23],
+            "vitb_effb0": [1, 2, 0, 1],
         }
 
         if hooks is None:
             hooks = default_hooks[backbone]
+
+        assert hooks[0] == default_hooks[backbone][0], "Convolutional hooks should be consistent with the model shape"
+        assert hooks[1] == default_hooks[backbone][1], "Convolutional hooks should be consistent with the model shape"
 
         # Instantiate backbone and reassemble blocks
         self.pretrained, self.scratch = _make_encoder(

@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from typing import Tuple, List
 
 import timm
+from .ConvEmbeddingWrapper import EfficientnetEmbeddingWrapper
 
 import performer_pytorch
 import reformer_pytorch
@@ -397,6 +398,41 @@ def _make_pretrained_vitb_rn50_384(
             model.blocks[i].attn = efficient_attentions[attention_variant](attention_heads)
 
     hooks = [0, 1, 8, 11] if hooks == None else hooks
+    return BackboneWrapper(
+        model,
+        features=[256, 512, 768, 768],
+        hooks=hooks,
+        hybrid_backbone=True,
+        use_readout=use_readout,
+        enable_attention_hooks=enable_attention_hooks,
+        remove_unused_attention=remove_unused_attention,
+    )
+
+
+def _make_pretrained_vitb_effb0(
+    pretrained,
+    attention_heads,
+    use_readout="ignore",
+    hooks=None,
+    enable_attention_hooks=False,
+    attention_variant=None,
+    remove_unused_attention=True,
+    pretrained_efficientnet=True,
+):
+    hooks = [1, 2, 0, 1] if hooks is None else hooks
+
+    efficientnetb0 = timm.create_model("efficientnet_b0", pretrained=pretrained_efficientnet)
+    wrapped_efficientnet = EfficientnetEmbeddingWrapper(efficientnetb0)
+    model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
+    model.patch_embed.backbone = wrapped_efficientnet
+    model.patch_embed.proj = nn.ConvTranspose2d(1280, 768, kernel_size=(2, 2), stride=(2, 2))  # TempChange proj -> proj2
+
+    # Modify model attention if requested
+    if attention_variant:
+        assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
+        for i in range(len(model.blocks)):
+            model.blocks[i].attn = efficient_attentions[attention_variant](attention_heads)
+
     return BackboneWrapper(
         model,
         features=[256, 512, 768, 768],

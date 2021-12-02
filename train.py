@@ -27,9 +27,12 @@ accumulation_steps = 1
 epochs = 2
 learning_rate = 1e-5
 # memory_compressed only supports batch_size=1
-attention_variant = "performer"
+backbone = "vitb_effb0"  # "vitb_rn50_384"
+backbone = "vitb_rn50_384"
+attention_variant = None  # "performer"
 attention_heads = 8
 hooks = [0, 1, 8, 11]
+hooks = "str:0,1,8,11"
 train_images_file = "train_files_eigen_full_fix.txt"
 val_images_file = "val_files_eigen_full_fix.txt"
 output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
@@ -37,6 +40,7 @@ output_filename = output_name + ".pt"
 opt = torch.optim.AdamW
 
 config_dict = {
+    "backbone": backbone,
     "attention_variant": attention_variant,
     "memory_compressed_rate": 2,
     "attention_heads": attention_heads,
@@ -176,7 +180,7 @@ def custom_loss(masked_output, masked_target):
 
 if __name__ == "__main__":
     # Init wandb
-    wandb.init(project="hooks_sweep", config=config_dict)
+    wandb.init(project="efficientnet", config=config_dict)  # DPT
     config = wandb.config
     accumulation_steps = config["accumulation_steps"]
     learning_rate = config["learning_rate"]
@@ -196,7 +200,7 @@ if __name__ == "__main__":
                 scale=0.00006016,
                 shift=0.00579,
                 invert=True,
-                backbone="vitb_rn50_384",
+                backbone=backbone,
                 attention_heads=attention_heads,
                 hooks=hooks,
                 non_negative=True,
@@ -246,8 +250,8 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
     t0 = time.time()
-    test(test_dataloader, model, loss_fn, training_step, log_wandb=False)
-    wandb.log({"validation_inference_time": time.time()-t0})
+    # test(test_dataloader, model, loss_fn, training_step, log_wandb=False)
+    # wandb.log({"validation_inference_time": time.time()-t0})
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         training_step = train(train_dataloader, model, loss_fn, optimizer, training_step, scaler)

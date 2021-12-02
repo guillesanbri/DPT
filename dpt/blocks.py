@@ -7,6 +7,7 @@ from .vit import (
     _make_pretrained_vitb_rn50_384,
     _make_pretrained_vitl16_384,
     _make_pretrained_vitb16_384,
+    _make_pretrained_vitb_effb0,
 )
 
 
@@ -46,6 +47,19 @@ def _make_encoder(
         )
         scratch = _make_scratch(
             [256, 512, 768, 768], features, groups=groups, expand=expand
+        )  # ViT-H/16 - 85.0% Top1 (backbone)
+    elif backbone == "vitb_effb0":
+        pretrained = _make_pretrained_vitb_effb0(
+            use_pretrained,
+            attention_heads,
+            hooks=hooks,
+            use_readout=use_readout,
+            enable_attention_hooks=enable_attention_hooks,
+            attention_variant=attention_variant,
+            remove_unused_attention=remove_unused_attention,
+        )
+        scratch = _make_scratch(
+            [24, 40, 768, 768], features, groups=groups, expand=expand
         )  # ViT-H/16 - 85.0% Top1 (backbone)
     elif backbone == "vitb16_384":
         pretrained = _make_pretrained_vitb16_384(

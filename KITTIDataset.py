@@ -40,12 +40,6 @@ class KITTIDataset(Dataset):
             depth_subdir = os.path.join(self.depth_dir, "val")
             depth_path = os.path.join(depth_subdir, self.depth_paths[idx])
             depth = util.io.read_image(depth_path)
-        # Trim image (?)
-        # height, width, _ = image.shape
-        # top = height - 352
-        # left = (width - 1216) // 2
-        # image = image[top: top + 352, left: left + 1216, :]
-        # depth = depth[top: top + 352, left: left + 1216, 0]
         # Apply transformations as needed
         transformed_images = self.transform({"image": image, "depth": depth})
         image = transformed_images["image"]

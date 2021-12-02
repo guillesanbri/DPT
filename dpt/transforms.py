@@ -229,3 +229,17 @@ class PrepareForNet(object):
             sample["depth"] = np.ascontiguousarray(depth)
 
         return sample
+
+
+class RandomHorizontalFlip(object):
+    """Apply random horizontal flip data augmentation."""
+
+    def __init__(self, p):
+        self.__p = p
+
+    def __call__(self, sample):
+        flip = np.random.rand() <= self.__p
+        if flip:
+            sample["image"] = np.fliplr(sample["image"])
+            sample["depth"] = np.fliplr(sample["depth"])
+        return sample

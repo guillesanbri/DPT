@@ -10,7 +10,7 @@ from util.misc import get_random_string
 from torchvision.transforms import Compose
 
 from dpt.models import DPTDepthModel
-from dpt.transforms import Resize, NormalizeImage, PrepareForNet
+from dpt.transforms import Resize, NormalizeImage, PrepareForNet, RandomHorizontalFlip
 from train_utils import custom_loss, train, test
 
 from torch.cuda.amp import GradScaler
@@ -99,16 +99,19 @@ if __name__ == "__main__":
 
     # Transformations
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    transform = Compose(
+    transform_train = Compose(
         [
-             Resize(
-                net_w,
-                net_h,
-                keep_aspect_ratio=True,
-                ensure_multiple_of=32,
-                resize_method="minimal",
-                image_interpolation_method=cv2.INTER_CUBIC,
-             ),
+             Resize(net_w, net_h, keep_aspect_ratio=True, ensure_multiple_of=32,
+                    resize_method="minimal", image_interpolation_method=cv2.INTER_CUBIC),
+             RandomHorizontalFlip(0.5),
+             normalization,
+             PrepareForNet(),
+        ]
+    )
+    transform_val = Compose(
+        [
+             Resize(net_w, net_h, keep_aspect_ratio=True, ensure_multiple_of=32,
+                    resize_method="minimal", image_interpolation_method=cv2.INTER_CUBIC),
              normalization,
              PrepareForNet(),
         ]
@@ -120,8 +123,8 @@ if __name__ == "__main__":
     depth_dir = os.path.join(dataset_dir, "data_depth_annotated/")
     train_images_file_path = os.path.join(dataset_dir, train_images_file)
     val_filenames_file = os.path.join(dataset_dir, val_images_file)
-    train_dataset = KITTIDataset(image_dir, depth_dir, train_images_file_path, transform=transform)
-    val_dataset = KITTIDataset(image_dir, depth_dir, val_filenames_file, transform=transform)
+    train_dataset = KITTIDataset(image_dir, depth_dir, train_images_file_path, transform=transform_train)
+    val_dataset = KITTIDataset(image_dir, depth_dir, val_filenames_file, transform=transform_val)
     # Create dataloaders
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     test_dataloader = DataLoader(val_dataset, batch_size=batch_size)

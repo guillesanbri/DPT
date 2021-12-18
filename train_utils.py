@@ -22,6 +22,11 @@ def train(dataloader, model, loss_fn, optimizer, training_step, scaler, accumula
 
         # Backpropagation
         scaler.scale(loss).backward()
+
+        # Gradient clipping
+        scaler.unscale_(optimizer)
+        torch.nn.utils.clip_grad_value_(model.parameters(), clip_value=0.5)
+
         if (batch+1) % accumulation_steps == 0:
             scaler.step(optimizer)
             scaler.update()

@@ -392,10 +392,12 @@ def _make_pretrained_vitb_rn50_384(
     model = timm.create_model("vit_base_resnet50_384", pretrained=pretrained)
 
     # Modify model attention if requested
-    if attention_variant:
-        assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
-        for i in range(len(model.blocks)):
+    for i in range(len(model.blocks)):
+        if attention_variant:
+            assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
             model.blocks[i].attn = efficient_attentions[attention_variant](attention_heads)
+        else:
+            model.blocks[i].attn = timm.models.vision_transformer.Attention(768, attention_heads, True)
 
     hooks = [0, 1, 8, 11] if hooks == None else hooks
     return BackboneWrapper(

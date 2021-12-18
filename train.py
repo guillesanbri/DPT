@@ -21,9 +21,9 @@ from torch.cuda.amp import GradScaler
 net_w, net_h = 640, 192
 # Training
 base_path = "weights/dpt_hybrid-midas-d889a10e.pt"
-mixed_precision = True
+mixed_precision = False
 batch_size, accumulation_steps = 1, 1
-epochs = 2
+epochs = 20
 learning_rate = 1e-5
 opt = torch.optim.AdamW
 train_images_file = "train_files_eigen_full_fix.txt"
@@ -71,6 +71,8 @@ if __name__ == "__main__":
     backbone = config["backbone"]
     transformer_hooks = config["transformer_hooks"]
     attention_variant = config["attention_variant"]
+    if attention_variant == "None":
+        attention_variant = None
     attention_heads = config["attention_heads"]
 
     # Convert str hooks to list (wandb hacky solution to display hooks correctly)
@@ -148,6 +150,8 @@ if __name__ == "__main__":
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         training_step = train(train_dataloader, model, loss_fn, optimizer, training_step, scaler, accumulation_steps, mixed_precision, device)
+        if training_step < 0:
+            break
         # print(f"1000 batches ejecutados en: {time.time()-t0}")
         # exit()
         test(test_dataloader, model, loss_fn, training_step, device)

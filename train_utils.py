@@ -34,6 +34,8 @@ def train(dataloader, model, loss_fn, optimizer, training_step, scaler, accumula
             metrics = np.array(compute_errors(masked_y.cpu().detach().numpy(), masked_pred.cpu().detach().numpy()))
             wandb.log({"training_step": training_step, "train_loss": loss, **dict(zip(metric_names, metrics))})
             print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            if np.isnan(loss):  # Stop run if loss is nan
+                return -1
         # if batch % 1000 == 0 and batch != 0:
         #      return training_step  # premature exit
     return training_step

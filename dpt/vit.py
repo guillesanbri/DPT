@@ -341,7 +341,7 @@ class BackboneWrapper(nn.Module):
             x = blk(x)
             if num in self.hooks:
                 out_features.append(x)
-            if self.remove_unused_attention and num > self.hooks[-1]:
+            if self.remove_unused_attention and num >= self.hooks[-1]:
                 break
         return out_features
 

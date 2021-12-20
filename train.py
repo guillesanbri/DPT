@@ -156,6 +156,7 @@ if __name__ == "__main__":
         # exit()
         test(test_dataloader, model, loss_fn, training_step, device)
         checkpoint_filename = "weights/" + output_name + "_" + str(t+1).zfill(3) + ".pt"
-        torch.save(model.state_dict(), checkpoint_filename)
-        print(f"Saved PyTorch Model checkpoint to {checkpoint_filename}")
+        if (t+1) % 5 == 0:
+            torch.save(model.state_dict(), checkpoint_filename)
+            print(f"Saved PyTorch Model checkpoint to {checkpoint_filename}")
     print("Done!")

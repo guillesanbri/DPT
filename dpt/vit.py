@@ -429,11 +429,14 @@ def _make_pretrained_vitb_effb0(
     model.patch_embed.backbone = wrapped_efficientnet
     model.patch_embed.proj = nn.ConvTranspose2d(1280, 768, kernel_size=(2, 2), stride=(2, 2))  # TempChange proj -> proj2
 
+    print("Updated script")
     # Modify model attention if requested
-    if attention_variant:
-        assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
-        for i in range(len(model.blocks)):
+    for i in range(len(model.blocks)):
+        if attention_variant:
+            assert attention_variant in efficient_attentions, f"{attention_variant} not in efficient_attentions dict."
             model.blocks[i].attn = efficient_attentions[attention_variant](attention_heads)
+        else:
+            model.blocks[i].attn = timm.models.vision_transformer.Attention(768, attention_heads, True)
 
     return BackboneWrapper(
         model,

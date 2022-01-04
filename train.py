@@ -16,7 +16,6 @@ from train_utils import custom_loss, train, test
 from torch.cuda.amp import GradScaler
 
 # Hyperparameters and config
-# TODO: Add horizontal flip augmentation
 # Input
 net_w, net_h = 640, 192
 # Training

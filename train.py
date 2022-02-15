@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import timm
 import wandb
 import torch
 
@@ -31,7 +32,7 @@ val_images_file = "val_files_eigen_full_fix.txt"
 backbone = "vitb_rn50_384"  # "vitb_effb0"
 transformer_hooks = "str:8,11"
 attention_variant = None  # "performer"
-attention_heads = 8
+attention_heads = 12
 # Output
 output_name = "dpt_hybrid_custom-kitti-" + get_random_string(8)
 output_filename = output_name + ".pt"
@@ -62,7 +63,7 @@ config_dict = {
 
 if __name__ == "__main__":
     # Init wandb
-    wandb.init(project="efficientnet", config=config_dict)  # DPT
+    wandb.init(project="resnet_imagenet", config=config_dict)  # DPT
     config = wandb.config
     # Re-read config for wandb-sweep-managed training
     learning_rate = config["learning_rate"]
@@ -97,6 +98,10 @@ if __name__ == "__main__":
                 non_negative=True,
                 enable_attention_hooks=False,
                 attention_variant=attention_variant).to(device)
+
+    # Override ResNet weights for those trained on Imagenet
+    # hybrid_vit_resnet = timm.create_model("vit_base_resnet50_384", pretrained=True)
+    # model.pretrained.model.patch_embed.backbone.load_state_dict(hybrid_vit_resnet.patch_embed.backbone.state_dict())
 
     # Transformations
     normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])

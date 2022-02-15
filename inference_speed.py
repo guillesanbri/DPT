@@ -1,11 +1,34 @@
-import cv2
+import os
 import wandb
 import torch
 import warnings
 import numpy as np
 import torchvision.transforms
+from fvcore.nn import FlopCountAnalysis
 
 from dpt.models import DPTDepthModel
+
+
+def get_flops(model, x, unit="G", quiet=True):
+    _prefix = {'k': 1e3,  # kilo
+               'M': 1e6,  # mega
+               'G': 1e9,  # giga
+               'T': 1e12,  # tera
+               'P': 1e15,  # peta
+               }
+    flops = FlopCountAnalysis(model, x)
+    num_flops = flops.total() / _prefix[unit]
+    if not quiet:
+        print(f"Model FLOPs: {num_flops:.2f} {unit}FLOPs")
+    return num_flops
+
+
+def get_model_size(model):
+    torch.save(model.state_dict(), "tmp.pt")
+    model_size = os.path.getsize("tmp.pt")/1e6
+    os.remove('tmp.pt')
+    return model_size
+
 
 # Hyperparameters and config
 # Input
@@ -15,11 +38,13 @@ h_kitti, w_kitti = 352, 1216
 backbone = "vitb_rn50_384"  # "vitb_effb0"
 transformer_hooks = "str:8,11"
 attention_variant = None  # "performer"
-attention_heads = 8
+attention_heads = 12
+mixed_precision = False
 
 config_dict = {
     "input_size": f"{net_h},{net_w}",
     "downsampling": "Resize image along w and h",
+    "mixed_precision": mixed_precision,
 
     "backbone": backbone,
     "transformer_hooks": transformer_hooks,
@@ -31,9 +56,10 @@ if __name__ == "__main__":
     warnings.simplefilter("ignore", UserWarning)
 
     # Init wandb
-    wandb.init(project="efficientnet", config=config_dict)  # DPT
+    wandb.init(config=config_dict)
     config = wandb.config
     # Re-read config for wandb-sweep-managed inference
+    mixed_precision = config["mixed_precision"]
     backbone = config["backbone"]
     transformer_hooks = config["transformer_hooks"]
     attention_variant = config["attention_variant"]
@@ -48,7 +74,7 @@ if __name__ == "__main__":
     assert isinstance(transformer_hooks, str) and transformer_hooks[:4] == "str:", \
         'Hooks are not in the format "str:[att_hook1, att_hook2]"'
     conv_hooks = {"vitb_rn50_384": [0, 1], "vitb_effb0": [1, 2]}[backbone]
-    transformer_hooks = [int(hook) for hook in transformer_hooks[4:].split(",")]
+    transformer_hooks = [int(hook) for hook in transformer_hooks.split(":")[-1].split(",")]
     hooks = conv_hooks + transformer_hooks
 
     # Get cpu or gpu device for training.
@@ -83,7 +109,7 @@ if __name__ == "__main__":
 
     # Measure inference time
     with torch.no_grad():
-        with torch.cuda.amp.autocast():
+        with torch.cuda.amp.autocast(enabled=mixed_precision):
             dummy = torchvision.transforms.Resize((net_h, net_w))(x)
             _ = model(dummy)  # Warm-up
             for i in range(n_inferences):
@@ -104,5 +130,10 @@ if __name__ == "__main__":
     fps = 1000/measures
     mean_fps = np.mean(fps)
     std_fps = np.std(fps)
-    wandb.log({"FPS": mean_fps, "std_fps": std_fps, "ms": mean_ms, "std_ms": std_ms})
+
+    GFLOPs = get_flops(model.to("cpu"), x.to("cpu"))
+    model_MB = get_model_size(model)
+    wandb.log({"FPS": mean_fps, "std_fps": std_fps, "ms": mean_ms, "std_ms": std_ms, "GFLOPs": GFLOPs, "MB": model_MB})
+
     print(f"FPS: {mean_fps:.2f} +- {1/std_fps:.2f} || Inference speed (ms): {mean_ms:.4f} +- {std_ms:.4f}")
+    print(f"GFLOPs: {GFLOPs:.3f} || Model size (MB): {model_MB:.2f}")

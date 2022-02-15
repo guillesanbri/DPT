@@ -1,4 +1,6 @@
 import os
+import cv2
+import numpy as np
 import util.io
 from torch.utils.data import Dataset
 
@@ -33,13 +35,15 @@ class KITTIDataset(Dataset):
         depth_subdir = os.path.join(self.depth_dir, "train")
         depth_path = os.path.join(depth_subdir, self.depth_paths[idx])
         try:
-            depth = util.io.read_image(depth_path)
+            depth = cv2.imread(depth_path, -1)
             if depth is None:
                 raise AttributeError("File not found in train folder, looking in val folder")
         except AttributeError:
             depth_subdir = os.path.join(self.depth_dir, "val")
             depth_path = os.path.join(depth_subdir, self.depth_paths[idx])
-            depth = util.io.read_image(depth_path)
+            depth = cv2.imread(depth_path, -1)
+        depth = depth / (256 ** 2)
+        depth = depth[:, :, np.newaxis].repeat(3, axis=2)
         # Apply transformations as needed
         transformed_images = self.transform({"image": image, "depth": depth})
         image = transformed_images["image"]

@@ -116,3 +116,5 @@ wandb/
 *.pt
 *.onnx
 .DS_Store
+
+/ignore/

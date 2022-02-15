@@ -1,0 +1,26 @@
+project: "Model-Architecture"
+name: "Hyperparam-Sweep"
+program: train.py
+method: grid
+metric:
+  name: val_loss
+  goal: minimize
+parameters:
+  backbone:
+    values:
+    - "vitb_effb0"
+    - "vitb_rn50_384"
+  transformer_hooks:
+    values:
+    - "str:0,1"
+    - "str:2,5"
+    - "str:8,11"
+  attention_variant:
+    values:
+    - "performer"
+    - "None"
+  attention_heads:
+    values:
+    - 1
+    - 12
+    - 24

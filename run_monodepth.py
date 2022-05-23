@@ -63,10 +63,12 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
             scale=0.00006016,
             shift=0.00579,
             invert=True,
-            backbone="vitb_rn50_384",
+            backbone="vitb_rn50_384",  # "vitb_effb0"
+            attention_heads=1,
+            hooks=[0, 1, 0, 1],
             non_negative=True,
             enable_attention_hooks=False,
-            attention_variant="memory_compressed"
+            attention_variant=None,  # "performer"
         )
 
         normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
@@ -217,7 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--optimize", dest="optimize", action="store_true")
     parser.add_argument("--no-optimize", dest="optimize", action="store_false")
 
-    parser.set_defaults(optimize=True)
+    parser.set_defaults(optimize=False)
     parser.set_defaults(kitti_crop=False)
     parser.set_defaults(absolute_depth=False)
     parser.set_defaults(resize_input=False)
@@ -228,8 +230,8 @@ if __name__ == "__main__":
         "midas_v21": "weights/midas_v21-f6b98070.pt",
         "dpt_large": "weights/dpt_large-midas-b53ba79e.pt",
         "dpt_hybrid": "weights/dpt_hybrid-midas-d889a10e.pt",
-        # "dpt_hybrid_kitti": "weights/dpt_hybrid-kitti-e7069aae.pt",
-        "dpt_hybrid_kitti": "weights/dpt_hybrid_custom-kitti-whdtqsbe.pt",
+        # "dpt_hybrid_kitti": "weights_fix/dpt_hybrid-kitti-e7069aae_020.pt",
+        "dpt_hybrid_kitti": "weights_fix/dpt_hybrid_custom-kitti-xhxbeoev_020.pt",
         "dpt_hybrid_nyu": "weights/dpt_hybrid_nyu-2ce69ec7.pt",
     }
 

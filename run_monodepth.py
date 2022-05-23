@@ -230,8 +230,8 @@ if __name__ == "__main__":
         "midas_v21": "weights/midas_v21-f6b98070.pt",
         "dpt_large": "weights/dpt_large-midas-b53ba79e.pt",
         "dpt_hybrid": "weights/dpt_hybrid-midas-d889a10e.pt",
-        # "dpt_hybrid_kitti": "weights_fix/dpt_hybrid-kitti-e7069aae_020.pt",
-        "dpt_hybrid_kitti": "weights_fix/dpt_hybrid_custom-kitti-xhxbeoev_020.pt",
+        # "dpt_hybrid_kitti": "weights/dpt_hybrid-kitti-e7069aae_020.pt",
+        "dpt_hybrid_kitti": "weights/dpt_hybrid_custom-kitti-xhxbeoev_020.pt",
         "dpt_hybrid_nyu": "weights/dpt_hybrid_nyu-2ce69ec7.pt",
     }
 

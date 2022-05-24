@@ -94,6 +94,9 @@ venv.bak/
 .spyderproject
 .spyproject
 
+# Pycharm
+.idea/
+
 # Rope project settings
 .ropeproject
 
@@ -103,9 +106,15 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+#wandb
+wandb/
+
 *.png
 *.pfm
 *.jpg
 *.jpeg
 *.pt
+*.onnx
 .DS_Store
+
+/ignore/

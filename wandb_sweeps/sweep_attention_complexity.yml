@@ -1,0 +1,23 @@
+project: "Benchmarking"
+name: "Attention-complexity-Sweep"
+program: attention_complexity.py
+method: grid
+parameters:
+  mixed_precision:
+    values:
+    - True
+    - False
+  num_tokens:
+    values:
+    - 144
+    - 288
+    - 576
+    - 1152
+    - 2304
+    - 4608
+    - 6912
+    - 9216
+  attention_variant:
+    values:
+    - "performer"
+    - "None"

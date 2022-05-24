@@ -14,7 +14,7 @@ from dpt.models import DPTDepthModel
 from dpt.midas_net import MidasNet_large
 from dpt.transforms import Resize, NormalizeImage, PrepareForNet
 
-#from util.misc import visualize_attention
+# from util.misc import visualize_attention
 
 
 def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=True):
@@ -54,14 +54,21 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
         net_w = 1216
         net_h = 352
 
+        if args.resize_input:
+            net_w = 640
+            net_h = 192
+
         model = DPTDepthModel(
             path=model_path,
             scale=0.00006016,
             shift=0.00579,
             invert=True,
-            backbone="vitb_rn50_384",
+            backbone="vitb_rn50_384",  # "vitb_effb0"
+            attention_heads=1,
+            hooks=[0, 1, 0, 1],
             non_negative=True,
             enable_attention_hooks=False,
+            attention_variant=None,  # "performer"
         )
 
         normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
@@ -111,8 +118,10 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
     model.eval()
 
     if optimize == True and device == torch.device("cuda"):
-        model = model.to(memory_format=torch.channels_last)
+        # model = torch.jit.script(model)  # Quick fix to evaluate
+        # model = model.to(memory_format=torch.channels_last)
         model = model.half()
+        pass
 
     model.to(device)
 
@@ -155,7 +164,7 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
                     prediction.unsqueeze(1),
                     size=img.shape[:2],
                     mode="bicubic",
-                    align_corners=False,
+                    align_corners=True,
                 )
                 .squeeze()
                 .cpu()
@@ -171,7 +180,9 @@ def run(input_path, output_path, model_path, model_type="dpt_hybrid", optimize=T
         filename = os.path.join(
             output_path, os.path.splitext(os.path.basename(img_name))[0]
         )
-        util.io.write_depth(filename, prediction, bits=2, absolute_depth=args.absolute_depth)
+        util.io.write_depth(
+            filename, prediction, bits=2, absolute_depth=args.absolute_depth
+        )
 
     print("finished")
 
@@ -203,21 +214,24 @@ if __name__ == "__main__":
 
     parser.add_argument("--kitti_crop", dest="kitti_crop", action="store_true")
     parser.add_argument("--absolute_depth", dest="absolute_depth", action="store_true")
+    parser.add_argument("--resize_input", dest="resize_input", action="store_true")
 
     parser.add_argument("--optimize", dest="optimize", action="store_true")
     parser.add_argument("--no-optimize", dest="optimize", action="store_false")
 
-    parser.set_defaults(optimize=True)
+    parser.set_defaults(optimize=False)
     parser.set_defaults(kitti_crop=False)
     parser.set_defaults(absolute_depth=False)
+    parser.set_defaults(resize_input=False)
 
     args = parser.parse_args()
 
     default_models = {
         "midas_v21": "weights/midas_v21-f6b98070.pt",
-        "dpt_large": "weights/dpt_large-midas-2f21e586.pt",
-        "dpt_hybrid": "weights/dpt_hybrid-midas-501f0c75.pt",
-        "dpt_hybrid_kitti": "weights/dpt_hybrid_kitti-cb926ef4.pt",
+        "dpt_large": "weights/dpt_large-midas-b53ba79e.pt",
+        "dpt_hybrid": "weights/dpt_hybrid-midas-d889a10e.pt",
+        # "dpt_hybrid_kitti": "weights/dpt_hybrid-kitti-e7069aae_020.pt",
+        "dpt_hybrid_kitti": "weights/dpt_hybrid_custom-kitti-xhxbeoev_020.pt",
         "dpt_hybrid_nyu": "weights/dpt_hybrid_nyu-2ce69ec7.pt",
     }
 

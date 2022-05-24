@@ -16,7 +16,7 @@ Documentation for this project can be found in the Appendix B of the [Master's T
 
 ### Acknowledgements
 
-This work obviously would not have been possible without the incredibly valuable contribution of the [Vision Transformers for Dense Prediction](https://github.com/isl-org/DPT) paper and the implementations of efficient attention mechanisms from [Phil Wang](https://github.com/lucidrains). Likewise, a huge thank you to the PyTorch community and Ross Wightman for its incredible work with [timm](https://github.com/rwightman/pytorch-image-models).
+This work obviously would not have been possible without the incredibly valuable contribution of the [Vision Transformers for Dense Prediction](https://github.com/isl-org/DPT) paper and the implementations of efficient attention mechanisms from [Phil Wang](https://github.com/lucidrains). Likewise, a huge thank you to the PyTorch community and Ross Wightman for his incredible work with [timm](https://github.com/rwightman/pytorch-image-models).
 
 ### License
 
